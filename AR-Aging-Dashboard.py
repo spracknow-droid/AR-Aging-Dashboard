@@ -62,7 +62,7 @@ if uploaded_file:
             with col1:
                 st.subheader("매출채권 잔액")
                 total_receivables = df['채권금액(원화)'].sum()
-                # 1) 총 매출채권 잔액을 백만원 단위로 표기 (소수점 제거)
+                # 총 매출채권 잔액을 백만원 단위로 표기 (소수점 제거)
                 total_receivables_mil = total_receivables / 1_000_000
                 st.metric(label="매출채권 총 잔액 합계", value=f"{total_receivables_mil:,.0f} 백만원")
 
@@ -72,7 +72,6 @@ if uploaded_file:
                 currency_summary = df.groupby('환종')['채권금액(원화)'].sum().reset_index()
 
                 # 파이 차트 생성 및 표시
-                # 시각적 개선: 색상 팔레트를 'Plotly'으로 변경하고 텍스트를 외부로 표시
                 fig_pie = px.pie(
                     currency_summary,
                     values='채권금액(원화)',
@@ -80,11 +79,10 @@ if uploaded_file:
                     title='통화별 잔액 비율',
                     color_discrete_sequence=px.colors.qualitative.Plotly
                 )
-                # 차트 레이아웃 업데이트 (가운데로 정렬)
                 fig_pie.update_traces(
                     marker=dict(line=dict(color='#000000', width=1)),
-                    textinfo='percent+label', # 텍스트에 비율과 라벨을 함께 표시
-                    pull=[0.05, 0, 0, 0] # 첫 번째 섹션을 살짝 떼어내 강조
+                    textinfo='percent+label',
+                    pull=[0.05, 0, 0, 0]
                 )
                 st.plotly_chart(fig_pie, use_container_width=True)
 
@@ -96,8 +94,8 @@ if uploaded_file:
                 currency_option = st.radio(
                     "통화 선택",
                     ('모든 통화', '외화', '원화'),
-                    horizontal=True, # 이 부분을 추가하여 가로로 표시
-                    index=0 # 이 부분을 추가하여 디폴트 값을 '모든 통화'로 설정 (0번 인덱스)
+                    horizontal=True,
+                    index=0
                 )
 
                 # 매출채권 기준일자와 매출일자의 차이로 채권 연령 계산
@@ -130,7 +128,7 @@ if uploaded_file:
                     amount_col = '채권금액(외화)'
                     y_axis_title_unit = "($)"
                     title = "외화 채권 연령 현황"
-                else: # 모든 통화
+                else:  # 모든 통화
                     plot_df = df.groupby('연령구분')['채권금액(원화)'].sum().reset_index()
                     amount_col = '채권금액(원화)'
                     y_axis_title_unit = "(원)"
@@ -175,14 +173,12 @@ if uploaded_file:
                     st.subheader(f"'{clicked_age_group}' 채권연령 상세 현황")
 
                     # 선택된 채권연령 데이터 필터링
-                    # 클릭된 차트의 통화 옵션에 따라 필터링 (원화 차트 클릭 시 원화, 외화 차트 클릭 시 외화)
                     if currency_option == '원화':
                         detail_df = df[(df['연령구분'] == clicked_age_group) & (df['환종'] == 'KRW')].copy()
                     elif currency_option == '외화':
                         detail_df = df[(df['연령구분'] == clicked_age_group) & (df['환종'] == 'USD')].copy()
                     else: # 모든 통화
                         detail_df = df[df['연령구분'] == clicked_age_group].copy()
-
 
                     # 거래처별 합계 계산 및 내림차순 정렬
                     summary_df = detail_df.groupby('거래처명')[amount_col].sum().reset_index()
@@ -205,13 +201,11 @@ if uploaded_file:
 
             # 칼럼 3: 6개월 이상 미회수 채권 Top 5 표시
             with col3:
-                # 3) 그래프 제목에 단위 정보 추가
                 st.subheader("6개월 이상 미회수 채권 (Top 5)")
 
                 threshold_date = standard_date - relativedelta(months=6)
                 overdue_df = df[df['매출일자'].dt.date <= threshold_date].copy()
 
-                # --- 수정된 부분: 거래처명 약식 표기 ---
                 # 거래처명 약식 표기를 위한 딕셔너리
                 name_mapping = {
                     'Jiangsu Shekoy Semiconductor New Material Co., Ltd': 'Jiangsu Shekoy',
@@ -220,40 +214,30 @@ if uploaded_file:
                     'CHJS(Chengdu High tech Jin Science)': 'CHJS',
                     'SemiLink Materials, LLC.' : 'SemiLink'
                 }
-
                 # 딕셔너리를 사용하여 거래처명 컬럼의 값을 변경
                 overdue_df['거래처명'] = overdue_df['거래처명'].replace(name_mapping)
-                # ---------------------------------------
 
                 # '채권금액(원화)'를 기준으로 집계하도록 수정
                 top5_df = overdue_df.groupby('거래처명')['채권금액(원화)'].sum().reset_index()
                 top5_df = top5_df.sort_values(by='채권금액(원화)', ascending=False).head(5)
 
                 # y축 정렬을 위해 거래처명을 카테고리형으로 변환
-                # `top5_df['거래처명']`는 이미 정렬되어 있으므로 오름차순으로 설정하여 정렬 순서 유지
                 top5_df['거래처명'] = pd.Categorical(top5_df['거래처명'], categories=top5_df['거래처명'].unique(), ordered=True)
 
                 if not top5_df.empty:
                     # 가로 막대그래프 생성 및 표시
-                    # 시각적 개선: 색상 팔레트 변경, 텍스트 라벨 추가
                     fig2 = px.bar(
                         top5_df,
                         y='거래처명',
-                        x='채권금액(원화)', # x축을 '채권금액(원화)'으로 설정
+                        x='채권금액(원화)',
                         orientation='h',
                         title='6개월 이상 미회수 채권 TOP 5',
-                        # 라벨에 단위 정보 업데이트
                         labels={'거래처명': '거래처명', '채권금액(원화)': '합계 금액 (원)'},
                         color_discrete_sequence=px.colors.qualitative.Bold
                     )
                     
-                    # y축 정렬 순서를 채권금액 기준으로 설정
                     fig2.update_yaxes(categoryorder='total ascending')
-
-                    # 막대 위에 값 표시 (가로 그래프이므로 x축에 표시), 쉼표로 천 단위 구분
                     fig2.update_traces(texttemplate='%{x:,.0f}', textposition='outside', cliponaxis=False)
-
-                    # 그래프 여백 조정
                     fig2.update_layout(
                         margin=dict(t=50, l=120, r=20, b=80),
                         uniformtext_minsize=8,
