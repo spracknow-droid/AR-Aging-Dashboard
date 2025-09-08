@@ -124,7 +124,7 @@ if uploaded_file:
                 fig_bar.update_traces(texttemplate='%{y:,.0f}', textposition='outside')
                 fig_bar.update_layout(
                     xaxis={'categoryorder': 'array', 'categoryarray': age_order},
-                    uniformtext_minsize=8,
+                    uniformtext_minsize=7,
                     uniformtext_mode='hide',
                     yaxis={'tickformat': ','}
                 )
@@ -205,7 +205,7 @@ if uploaded_file:
                     fig2.update_traces(texttemplate='%{x:,.0f}', textposition='outside', cliponaxis=False)
                     fig2.update_layout(
                         margin=dict(t=50, l=120, r=20, b=80),
-                        uniformtext_minsize=8,
+                        uniformtext_minsize=7,
                         uniformtext_mode='hide'
                     )
 
