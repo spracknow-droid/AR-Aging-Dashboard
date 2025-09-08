@@ -6,7 +6,7 @@ from streamlit_plotly_events import plotly_events
 import io
 import numpy as np
 from datetime import date
-from dateutil.relativelselta import relativedelta
+from dateutil.relativedelta import relativedelta
 import calendar
 
 # 페이지 구성을 와이드 레이아웃으로 설정
