@@ -210,7 +210,13 @@ if uploaded_file:
                         # 컬럼3 그래프 여백 조정
                         margin=dict(t=50, l=40, r=50, b=80), 
                         uniformtext_minsize=7,
-                        uniformtext_mode='hide'
+                        uniformtext_mode='hide',
+                        # 컬럼3 그래프 축제목 위치 조정
+                        xaxis=dict(
+                            title=dict(
+                                standoff=20
+                            )
+                        )
                     )
 
                     # plotly_events를 사용하여 그래프 표시 및 클릭 이벤트 처리
