@@ -86,17 +86,9 @@ if uploaded_file:
                 )
                 st.plotly_chart(fig_pie, use_container_width=True)
 
-            # 칼럼 2: 채권 연령 현황 시각화
+            # 칼럼 2: 외화 채권 연령 현황 시각화
             with col2:
-                st.subheader("채권 연령 현황")
-
-                # 통화 선택 라디오 버튼 (가로 정렬 및 순서 지정)
-                currency_option = st.radio(
-                    "통화 선택",
-                    ('모든 통화', '외화', '원화'),
-                    horizontal=True,
-                    index=0
-                )
+                st.subheader("외화 채권 연령 현황")
 
                 # 매출채권 기준일자와 매출일자의 차이로 채권 연령 계산
                 standard_datetime = pd.to_datetime(standard_date)
@@ -117,36 +109,25 @@ if uploaded_file:
 
                 df['연령구분'] = df['채권연령'].apply(age_group)
 
-                # 선택한 통화별 데이터 집계
-                if currency_option == '원화':
-                    plot_df = df[df['환종'] == 'KRW'].groupby('연령구분')['채권금액(원화)'].sum().reset_index()
-                    amount_col = '채권금액(원화)'
-                    y_axis_title_unit = "(원)"
-                    title = "원화 채권 연령 현황"
-                elif currency_option == '외화':
-                    plot_df = df[df['환종'] == 'USD'].groupby('연령구분')['채권금액(외화)'].sum().reset_index()
-                    amount_col = '채권금액(외화)'
-                    y_axis_title_unit = "($)"
-                    title = "외화 채권 연령 현황"
-                else:  # 모든 통화
-                    plot_df = df.groupby('연령구분')['채권금액(원화)'].sum().reset_index()
-                    amount_col = '채권금액(원화)'
-                    y_axis_title_unit = "(원)"
-                    title = "모든 통화 채권 연령 현황"
+                # '외화' 데이터 필터링 및 집계
+                plot_df = df[df['환종'] == 'USD'].groupby('연령구분')['채권금액(외화)'].sum().reset_index()
+                amount_col = '채권금액(외화)'
+                y_axis_title_unit = "($)"
+                title = "외화 채권 연령 현황"
 
                 # 연령 구간 순서 지정 및 정렬
                 age_order = ['<1 mo.', '1-3 mo.', '3-6 mo.', '6-12 mo.', '>1 yr.']
                 plot_df['연령구분'] = pd.Categorical(plot_df['연령구분'], categories=age_order, ordered=True)
                 plot_df = plot_df.sort_values('연령구분')
                 
-                # --- Plotly Graph Objects를 사용하여 그래프 생성 (수정) ---
+                # Plotly Graph Objects를 사용하여 그래프 생성
                 fig = go.Figure()
                 fig.add_trace(go.Bar(
                     x=plot_df['연령구분'],
                     y=plot_df[amount_col],
                     text=plot_df[amount_col].apply(lambda x: f'{x:,.0f}'),
                     textposition='outside',
-                    marker_color=px.colors.qualitative.Vivid[0]  # 단일 색상으로 지정
+                    marker_color=px.colors.qualitative.Vivid[0]
                 ))
 
                 fig.update_layout(
@@ -159,21 +140,15 @@ if uploaded_file:
 
                 selected_point = plotly_events(fig, click_event=True, key="bar_chart")
 
-                # --- 새로운 기능: 클릭 시 상세 데이터 표 생성 (col2 내부에 배치) ---
+                # 클릭 시 상세 데이터 표 생성
                 if selected_point:
-                    # 클릭된 막대의 연령구분 값 가져오기
                     clicked_age_group = selected_point[0]['x']
 
                     st.markdown("---")
-                    st.subheader(f"'{clicked_age_group}' 채권연령 상세 현황")
+                    st.subheader(f"'{clicked_age_group}' 외화 채권 상세 현황")
 
                     # 선택된 채권연령 데이터 필터링
-                    if currency_option == '원화':
-                        detail_df = df[(df['연령구분'] == clicked_age_group) & (df['환종'] == 'KRW')].copy()
-                    elif currency_option == '외화':
-                        detail_df = df[(df['연령구분'] == clicked_age_group) & (df['환종'] == 'USD')].copy()
-                    else: # 모든 통화
-                        detail_df = df[df['연령구분'] == clicked_age_group].copy()
+                    detail_df = df[(df['연령구분'] == clicked_age_group) & (df['환종'] == 'USD')].copy()
 
                     # 거래처별 합계 계산 및 내림차순 정렬
                     summary_df = detail_df.groupby('거래처명')[amount_col].sum().reset_index()
@@ -193,6 +168,7 @@ if uploaded_file:
 
                     # 결과 표 표시
                     st.dataframe(final_df.rename(columns={amount_col: '채권금액'}), use_container_width=True, hide_index=True)
+
 
             # 칼럼 3: 6개월 이상 미회수 채권 Top 5 표시
             with col3:
