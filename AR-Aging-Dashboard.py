@@ -135,14 +135,11 @@ if uploaded_file:
                     amount_col = '채권금액(원화)'
                     title = "모든 통화 채권 연령 현황"
 
-                # 2) 금액을 백만원 단위로 변환
-                plot_df[amount_col] = plot_df[amount_col] / 1_000_000
-
                 # 연령 구간 순서 지정 및 정렬
                 age_order = ['<1 mo.', '1-3 mo.', '3-6 mo.', '6-12 mo.', '>1 yr.']
                 plot_df['연령구분'] = pd.Categorical(plot_df['연령구분'], categories=age_order, ordered=True)
                 plot_df = plot_df.sort_values('연령구분')
-
+                
                 # --- Plotly Express를 사용하여 그래프 생성 ---
                 fig = px.bar(
                     plot_df,
@@ -152,14 +149,27 @@ if uploaded_file:
                     title=title,
                     labels={
                         '연령구분': '채권 연령',
-                        amount_col: "채권 금액 (백만원, 백만달러)"
+                        amount_col: "채권 금액"
                     },
                     color_discrete_sequence=px.colors.qualitative.Vivid
                 )
+
+                # 2) 금액을 백만원 단위로 변환
+                plot_df[amount_col] = plot_df[amount_col] / 1_000_000
                 
+                # Update y-axis to show "백만원, 백만달러" with correct scale
+                fig.update_layout(
+                    yaxis_tickformat='d',
+                    yaxis_title="채권 금액 (백만원, 백만달러)",
+                    uniformtext_minsize=8, uniformtext_mode='hide'
+                )
+                
+                # Use the scaled data for the y-axis
+                fig.data[0].y = plot_df[amount_col]
+
                 fig.update_traces(textposition='outside')
                 fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
-
+                
                 # plotly_events를 사용하여 그래프 표시 및 클릭 이벤트 처리
                 selected_point = plotly_events(fig, click_event=True, key="bar_chart")
 
