@@ -143,27 +143,22 @@ if uploaded_file:
                 plot_df['연령구분'] = pd.Categorical(plot_df['연령구분'], categories=age_order, ordered=True)
                 plot_df = plot_df.sort_values('연령구분')
 
-                # --- 클릭 이벤트를 위한 Plotly Go 그래프 생성 ---
-                fig = go.Figure(
-                    data=[
-                        go.Bar(
-                            x=plot_df['연령구분'],
-                            y=plot_df[amount_col],
-                            text=plot_df[amount_col].apply(lambda x: f'{x:,.0f}'),
-                            textposition='outside',
-                            marker_color=px.colors.qualitative.Vivid
-                        )
-                    ],
-                    layout=go.Layout(
-                        title=title,
-                        xaxis_title="채권 연령",
-                        yaxis_title="채권 금액 (백만원,백만달러)",
-                        # 왼쪽 여백(l)과 아래쪽 여백(b)을 조정
-                        margin=dict(t=50, l=80, r=20, b=80),
-                        uniformtext_minsize=8,
-                        uniformtext_mode='hide'
-                    )
+                # --- Plotly Express를 사용하여 그래프 생성 ---
+                fig = px.bar(
+                    plot_df,
+                    x='연령구분',
+                    y=amount_col,
+                    text=plot_df[amount_col].apply(lambda x: f'{x:,.0f}'),
+                    title=title,
+                    labels={
+                        '연령구분': '채권 연령',
+                        amount_col: "채권 금액 (백만원, 백만달러)"
+                    },
+                    color_discrete_sequence=px.colors.qualitative.Vivid
                 )
+                
+                fig.update_traces(textposition='outside')
+                fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
 
                 # plotly_events를 사용하여 그래프 표시 및 클릭 이벤트 처리
                 selected_point = plotly_events(fig, click_event=True, key="bar_chart")
@@ -226,6 +221,9 @@ if uploaded_file:
 
                 # 3) 금액을 백만원 단위로 변환
                 top5_df['채권금액(원화)'] = top5_df['채권금액(원화)'] / 1_000_000
+                
+                # y축 정렬을 위해 거래처명을 카테고리형으로 변환
+                top5_df['거래처명'] = pd.Categorical(top5_df['거래처명'], categories=top5_df['거래처명'].unique(), ordered=True)
 
                 if not top5_df.empty:
                     # 가로 막대그래프 생성 및 표시
@@ -239,6 +237,7 @@ if uploaded_file:
                         labels={'거래처명': '거래처명', '채권금액(원화)': '합계 금액 (백만원)'},
                         color_discrete_sequence=px.colors.qualitative.Bold
                     )
+                    
                     # y축 정렬 순서를 채권금액 기준으로 설정
                     fig2.update_yaxes(categoryorder='total ascending')
 
@@ -270,6 +269,7 @@ if uploaded_file:
                         customer_detail_df['채권금액(원화)'] = customer_detail_df['채권금액(원화)'].apply(lambda x: f'{x:,.0f}')
 
                         # 결과 표 표시
+                        # 인덱스(index)를 표시하지 않도록 옵션 추가
                         st.dataframe(customer_detail_df[['매출일자', '채권금액(원화)', '적요']], use_container_width=True, hide_index=True)
 
                 else:
