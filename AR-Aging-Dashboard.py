@@ -55,8 +55,8 @@ if uploaded_file:
             st.sidebar.subheader("매출채권 기준일자")
             st.sidebar.info(standard_date.strftime("%Y년 %m월 %d일"))
 
-            # --- 레이아웃: 너비 비율로 3개 컬럼 생성 (20:35:45) ---
-            col1, col2, col3 = st.columns([20, 35, 45])
+            # --- 레이아웃: 너비 비율로 3개 컬럼 생성 (20:40:40) ---
+            col1, col2, col3 = st.columns([20, 40, 40])
 
             # 칼럼 1: 총 잔액 표시 및 파이차트
             with col1:
