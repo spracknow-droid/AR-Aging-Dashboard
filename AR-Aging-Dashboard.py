@@ -128,7 +128,7 @@ if uploaded_file:
                     uniformtext_mode='hide',
                     yaxis={'tickformat': ','},
                     # 여기에 마진(여백) 설정 추가
-                    margin=dict(l=100, r=50, t=50, b=50) # 예시 값. 필요에 따라 조정 가능
+                    margin=dict(l=150, r=20, t=50, b=70) # 예시 값. 필요에 따라 조정 가능
 
                 )
 
