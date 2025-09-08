@@ -126,7 +126,10 @@ if uploaded_file:
                     xaxis={'categoryorder': 'array', 'categoryarray': age_order},
                     uniformtext_minsize=7,
                     uniformtext_mode='hide',
-                    yaxis={'tickformat': ','}
+                    yaxis={'tickformat': ','},
+                    # 여기에 마진(여백) 설정 추가
+                    margin=dict(l=50, r=00, t=00, b=00) # 예시 값. 필요에 따라 조정 가능
+
                 )
 
                 # plotly_events를 사용하여 그래프 표시 및 클릭 이벤트 처리
