@@ -86,98 +86,83 @@ if uploaded_file:
                 )
                 st.plotly_chart(fig_pie, use_container_width=True)
 
-            # 칼럼 2: 외화 채권 연령 현황 시각화
+            # 칼럼 2: 채권 연령 현황 시각화
             with col2:
-                st.subheader("외화 채권 연령 현황")
+                st.subheader("채권 연령 현황")
 
-                # '채권금액(외화)' 컬럼을 숫자형으로 강제 변환
-                df['채권금액(외화)'] = pd.to_numeric(df['채권금액(외화)'], errors='coerce')
-                df.dropna(subset=['채권금액(외화)'], inplace=True)
-
-                # 매출채권 기준일자와 매출일자의 차이로 채권 연령 계산
-                standard_datetime = pd.to_datetime(standard_date)
-                df['채권연령'] = (standard_datetime - df['매출일자']).dt.days
-
-                # 연령 구간 분류 함수 정의
-                def age_group(days):
-                    if days < 31:
+                # 채권 연령을 계산하는 함수
+                def get_age_group(invoice_date, standard_date):
+                    days_diff = (standard_date - invoice_date.date()).days
+                    if days_diff <= 30:
                         return '<1 mo.'
-                    elif days < 92:
+                    elif days_diff <= 90:
                         return '1-3 mo.'
-                    elif days < 183:
+                    elif days_diff <= 180:
                         return '3-6 mo.'
-                    elif days < 365:
+                    elif days_diff <= 365:
                         return '6-12 mo.'
                     else:
                         return '>1 yr.'
 
-                df['연령구분'] = df['채권연령'].apply(age_group)
+                # '채권 연령' 컬럼 추가
+                df['채권 연령'] = df['매출일자'].apply(lambda x: get_age_group(x, standard_date))
 
-                # '외화' 데이터 필터링 및 집계
-                plot_df = df[df['환종'] == 'USD'].groupby('연령구분')['채권금액(외화)'].sum().reset_index()
-                amount_col = '채권금액(외화)'
-                y_axis_title_unit = "($)"
-                title = "외화 채권 연령 현황"
-
-                # 연령 구간 순서 지정 및 정렬
+                # 연령별 데이터 집계
                 age_order = ['<1 mo.', '1-3 mo.', '3-6 mo.', '6-12 mo.', '>1 yr.']
-                plot_df['연령구분'] = pd.Categorical(plot_df['연령구분'], categories=age_order, ordered=True)
-                plot_df = plot_df.sort_values('연령구분')
-                
-                # Plotly Express를 사용하여 세로 막대 그래프 생성
-                fig = px.bar(
-                    plot_df,
-                    x='연령구분',
-                    y=amount_col,
-                    title=title,
-                    labels={'연령구분': '채권 연령', amount_col: f"채권 금액 {y_axis_title_unit}"},
-                    color_discrete_sequence=px.colors.qualitative.Vivid
+                age_summary = df.groupby('채권 연령')['채권금액(원화)'].sum().reindex(age_order, fill_value=0).reset_index()
+
+                # 막대 그래프 생성
+                fig_bar = px.bar(
+                    age_summary,
+                    x='채권 연령',
+                    y='채권금액(원화)',
+                    title='매출채권 연령별 잔액',
+                    labels={'채권 연령': '채권 연령', '채권금액(원화)': '합계 금액 (원)'},
+                    color_discrete_sequence=px.colors.qualitative.Plotly
                 )
-                
-                # 막대 위에 값 표시 및 Y축 포맷 설정
-                fig.update_traces(
-                    texttemplate='%{y:,.0f}',
-                    textposition='outside',
-                    cliponaxis=False
-                )
-                
-                fig.update_layout(
-                    uniformtext_minsize=8, 
+
+                fig_bar.update_traces(texttemplate='%{y:,.0f}', textposition='outside')
+                fig_bar.update_layout(
+                    xaxis={'categoryorder': 'array', 'categoryarray': age_order},
+                    uniformtext_minsize=8,
                     uniformtext_mode='hide',
-                    yaxis_tickformat=',.0f' # Y축 틱(눈금) 포맷을 숫자로 설정
+                    yaxis={'tickformat': ','}
                 )
 
-                selected_point = plotly_events(fig, click_event=True, key="bar_chart")
+                # plotly_events를 사용하여 그래프 표시 및 클릭 이벤트 처리
+                selected_age_group = plotly_events(fig_bar, click_event=True, key="bar_chart_age")
 
-                # 클릭 시 상세 데이터 표 생성
-                if selected_point:
-                    clicked_age_group = selected_point[0]['x']
-
+                # 클릭 이벤트에 따른 상세 정보 표 생성
+                if selected_age_group:
                     st.markdown("---")
-                    st.subheader(f"'{clicked_age_group}' 외화 채권 상세 현황")
-
-                    # 선택된 채권연령 데이터 필터링
-                    detail_df = df[(df['연령구분'] == clicked_age_group) & (df['환종'] == 'USD')].copy()
-
-                    # 거래처별 합계 계산 및 내림차순 정렬
-                    summary_df = detail_df.groupby('거래처명')[amount_col].sum().reset_index()
-                    summary_df = summary_df.sort_values(by=amount_col, ascending=False)
-
-                    # Top 5와 나머지 '기타'로 분리
-                    top5_customers = summary_df.head(5)
-                    if len(summary_df) > 5:
-                        other_amount = summary_df.iloc[5:][amount_col].sum()
-                        other_row = pd.DataFrame([{'거래처명': '기타', amount_col: other_amount}])
-                        final_df = pd.concat([top5_customers, other_row], ignore_index=True)
-                    else:
-                        final_df = top5_customers
-
-                    # 최종 데이터프레임의 금액 포맷팅
-                    final_df[amount_col] = final_df[amount_col].apply(lambda x: f'{x:,.0f}')
-
+                    clicked_age = selected_age_group[0]['x']
+                    st.subheader(f"'{clicked_age}' 상세 내역")
+                    
+                    # 클릭된 연령 그룹에 해당하는 원본 데이터 필터링
+                    age_group_df = df[df['채권 연령'] == clicked_age].copy()
+                    
+                    # '채권금액(원화)'를 기준으로 내림차순 정렬
+                    age_group_df.sort_values(by='채권금액(원화)', ascending=False, inplace=True)
+                    
+                    # 필요한 컬럼만 선택하고 소계 행 추가
+                    detail_df = age_group_df[['거래처명', '채권금액(원화)', '채권금액(외화)']].copy()
+                    
+                    # 소계 계산
+                    total_krw = detail_df['채권금액(원화)'].sum()
+                    total_foreign = detail_df['채권금액(외화)'].sum()
+                    
+                    # 소계 행 생성
+                    subtotal_row = pd.DataFrame([['**소계**', total_krw, total_foreign]], columns=detail_df.columns)
+                    
+                    # 소계 행을 데이터프레임에 추가
+                    detail_df = pd.concat([detail_df, subtotal_row], ignore_index=True)
+                    
+                    # 숫자 포맷팅
+                    detail_df['채권금액(원화)'] = detail_df['채권금액(원화)'].apply(lambda x: f'{x:,.0f}')
+                    detail_df['채권금액(외화)'] = detail_df['채권금액(외화)'].apply(lambda x: f'{x:,.2f}')
+                    
                     # 결과 표 표시
-                    st.dataframe(final_df.rename(columns={amount_col: '채권금액'}), use_container_width=True, hide_index=True)
-
+                    st.dataframe(detail_df, use_container_width=True, hide_index=True)
 
             # 칼럼 3: 6개월 이상 미회수 채권 Top 5 표시
             with col3:
@@ -188,7 +173,7 @@ if uploaded_file:
 
                 # 거래처명 약식 표기를 위한 딕셔너리
                 name_mapping = {
-                    'Jiangsu Shekoy Semiconductor New Material Co., Ltd': 'Jiangsu Shekoy',
+                    'Jiangsu Shekoy Semiconductor New Material Co., Ltd': 'Shekoy',
                     'UP Electronic Materials(Taiwan) Limited': 'UPTW',
                     'Changxin Memory Technologies, Inc. (CXMT)': 'CXMT',
                     'CHJS(Chengdu High tech Jin Science)': 'CHJS',
