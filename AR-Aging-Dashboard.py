@@ -208,7 +208,7 @@ if uploaded_file:
                     fig2.update_traces(texttemplate='%{x:,.0f}', textposition='outside', cliponaxis=False)
                     fig2.update_layout(
                         # 컬럼3 그래프 여백 조정
-                        margin=dict(t=50, l=60, r=60, b=80), 
+                        margin=dict(t=50, l=70, r=80, b=80), 
                         uniformtext_minsize=7,
                         uniformtext_mode='hide',
                         # 컬럼3 그래프 축제목 위치 조정
