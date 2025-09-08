@@ -207,7 +207,8 @@ if uploaded_file:
                     fig2.update_yaxes(categoryorder='total ascending')
                     fig2.update_traces(texttemplate='%{x:,.0f}', textposition='outside', cliponaxis=False)
                     fig2.update_layout(
-                        margin=dict(t=50, l=120, r=20, b=80),
+                        # 컬럼3 그래프 여백 조정
+                        margin=dict(t=50, l=40, r=50, b=80), 
                         uniformtext_minsize=7,
                         uniformtext_mode='hide'
                     )
