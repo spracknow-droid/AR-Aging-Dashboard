@@ -124,19 +124,19 @@ if uploaded_file:
                 if currency_option == '원화':
                     plot_df = df[df['환종'] == 'KRW'].groupby('연령구분')['채권금액(원화)'].sum().reset_index()
                     amount_col = '채권금액(원화)'
-                    y_axis_title_unit = "(백만원)"
+                    y_axis_title_unit = "(원)"
                     title = "원화 채권 연령 현황"
                 elif currency_option == '외화':
                     # 외화는 USD로 가정
                     # '환종' 컬럼값이 'USD'인 값만 집계하도록 수정
                     plot_df = df[df['환종'] == 'USD'].groupby('연령구분')['채권금액(외화)'].sum().reset_index()
                     amount_col = '채권금액(외화)'
-                    y_axis_title_unit = "(백만달러)"
+                    y_axis_title_unit = "($)"
                     title = "외화 채권 연령 현황"
                 else: # 모든 통화
                     plot_df = df.groupby('연령구분')['채권금액(원화)'].sum().reset_index()
                     amount_col = '채권금액(원화)'
-                    y_axis_title_unit = "(백만원)"
+                    y_axis_title_unit = "(원)"
                     title = "모든 통화 채권 연령 현황"
 
                 # 연령 구간 순서 지정 및 정렬
@@ -144,15 +144,17 @@ if uploaded_file:
                 plot_df['연령구분'] = pd.Categorical(plot_df['연령구분'], categories=age_order, ordered=True)
                 plot_df = plot_df.sort_values('연령구분')
                 
-                # 금액을 백만원/백만달러 단위로 변환
-                plot_df[amount_col] = plot_df[amount_col] / 1_000_000
+                # --- 수정 부분 시작: 금액을 백만원/백만달러 단위로 변환하는 코드를 삭제합니다. ---
+                # plot_df[amount_col] = plot_df[amount_col] / 1_000_000
+                # --- 수정 부분 끝 ---
 
                 # --- Plotly Express를 사용하여 그래프 생성 ---
                 fig = px.bar(
                     plot_df,
                     x='연령구분',
                     y=amount_col,
-                    text=plot_df[amount_col].apply(lambda x: f'{x:,.0f}'), # 텍스트 레이블 백만원 단위로 포맷팅
+                    # 텍스트 레이블을 원래 금액 그대로 포맷팅
+                    text=plot_df[amount_col].apply(lambda x: f'{x:,.0f}'),
                     title=title,
                     labels={
                         '연령구분': '채권 연령',
@@ -161,9 +163,9 @@ if uploaded_file:
                     color_discrete_sequence=px.colors.qualitative.Vivid
                 )
                 
-                # Update y-axis to show "백만원, 백만달러" with correct scale
+                # y-axis를 수정하여 원래 금액을 보여주도록 합니다.
                 fig.update_layout(
-                    yaxis_tickformat='d', # 정수 형식으로 표시
+                    yaxis_tickformat=',.0f', # 쉼표로 천 단위 구분
                     yaxis_title=f"채권 금액 {y_axis_title_unit}",
                     uniformtext_minsize=8, uniformtext_mode='hide'
                 )
@@ -239,8 +241,9 @@ if uploaded_file:
                 top5_df = overdue_df.groupby('거래처명')['채권금액(원화)'].sum().reset_index()
                 top5_df = top5_df.sort_values(by='채권금액(원화)', ascending=False).head(5)
 
-                # 3) 금액을 백만원 단위로 변환
-                top5_df['채권금액(원화)'] = top5_df['채권금액(원화)'] / 1_000_000
+                # --- 수정 부분 시작: 금액을 백만원 단위로 변환하는 코드를 삭제합니다. ---
+                # top5_df['채권금액(원화)'] = top5_df['채권금액(원화)'] / 1_000_000
+                # --- 수정 부분 끝 ---
                 
                 # y축 정렬을 위해 거래처명을 카테고리형으로 변환
                 # `top5_df['거래처명']`는 이미 정렬되어 있으므로 오름차순으로 설정하여 정렬 순서 유지
@@ -255,19 +258,20 @@ if uploaded_file:
                         x='채권금액(원화)', # x축을 '채권금액(원화)'으로 설정
                         orientation='h',
                         title='6개월 이상 미회수 채권 TOP 5',
-                        labels={'거래처명': '거래처명', '채권금액(원화)': '합계 금액 (백만원)'},
+                        # 라벨에 단위 정보 업데이트
+                        labels={'거래처명': '거래처명', '채권금액(원화)': '합계 금액 (원)'},
                         color_discrete_sequence=px.colors.qualitative.Bold
                     )
                     
                     # y축 정렬 순서를 채권금액 기준으로 설정
                     fig2.update_yaxes(categoryorder='total ascending')
 
-                    # 막대 위에 값 표시 (가로 그래프이므로 x축에 표시)
+                    # 막대 위에 값 표시 (가로 그래프이므로 x축에 표시), 쉼표로 천 단위 구분
                     fig2.update_traces(texttemplate='%{x:,.0f}', textposition='outside', cliponaxis=False)
 
-                    # --- 수정: 그래프 여백 조정 (왼쪽과 아래쪽 여백을 넓힘) ---
+                    # 그래프 여백 조정
                     fig2.update_layout(
-                        margin=dict(t=50, l=120, r=20, b=80), # 왼쪽 여백(l)을 350으로, 아래쪽 여백(b)을 80으로 늘림
+                        margin=dict(t=50, l=120, r=20, b=80),
                         uniformtext_minsize=8,
                         uniformtext_mode='hide'
                     )
