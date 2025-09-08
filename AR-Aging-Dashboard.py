@@ -60,11 +60,11 @@ if uploaded_file:
 
             # 칼럼 1: 총 잔액 표시 및 파이차트
             with col1:
-                st.subheader("매출채권 잔액")
+                st.subheader("매출채권")
                 total_receivables = df['채권금액(원화)'].sum()
                 # 총 매출채권 잔액을 백만원 단위로 표기 (소수점 제거)
                 total_receivables_mil = total_receivables / 1_000_000
-                st.metric(label="매출채권 총 잔액 합계", value=f"{total_receivables_mil:,.0f} 백만원")
+                st.metric(label="총 잔액", value=f"{total_receivables_mil:,.0f} 백만원")
 
                 st.markdown("---")
 
