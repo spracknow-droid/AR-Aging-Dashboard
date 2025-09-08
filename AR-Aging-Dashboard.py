@@ -6,7 +6,7 @@ from streamlit_plotly_events import plotly_events
 import io
 import numpy as np
 from datetime import date
-from dateutil.relativedelta import relativedelta
+from dateutil.relativelselta import relativedelta
 import calendar
 
 # 페이지 구성을 와이드 레이아웃으로 설정
@@ -139,29 +139,24 @@ if uploaded_file:
                 plot_df['연령구분'] = pd.Categorical(plot_df['연령구분'], categories=age_order, ordered=True)
                 plot_df = plot_df.sort_values('연령구분')
                 
-                # --- Plotly Express를 사용하여 그래프 생성 ---
-                fig = px.bar(
-                    plot_df,
-                    x='연령구분',
-                    y=amount_col,
+                # --- Plotly Graph Objects를 사용하여 그래프 생성 (수정) ---
+                fig = go.Figure()
+                fig.add_trace(go.Bar(
+                    x=plot_df['연령구분'],
+                    y=plot_df[amount_col],
                     text=plot_df[amount_col].apply(lambda x: f'{x:,.0f}'),
-                    title=title,
-                    labels={
-                        '연령구분': '채권 연령',
-                        amount_col: f"채권 금액 {y_axis_title_unit}"
-                    },
-                    color_discrete_sequence=px.colors.qualitative.Vivid
-                )
-                
+                    textposition='outside',
+                    marker_color=px.colors.qualitative.Vivid[0]  # 단일 색상으로 지정
+                ))
+
                 fig.update_layout(
-                    yaxis_tickformat=',.0f',
+                    title=title,
+                    xaxis_title='채권 연령',
                     yaxis_title=f"채권 금액 {y_axis_title_unit}",
+                    yaxis_tickformat=',.0f',
                     uniformtext_minsize=8, uniformtext_mode='hide'
                 )
-                
-                fig.update_traces(textposition='outside')
-                fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
-                
+
                 selected_point = plotly_events(fig, click_event=True, key="bar_chart")
 
                 # --- 새로운 기능: 클릭 시 상세 데이터 표 생성 (col2 내부에 배치) ---
