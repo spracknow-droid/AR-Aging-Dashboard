@@ -90,7 +90,6 @@ if uploaded_file:
 
             # 칼럼 2: 채권 연령 현황 시각화
             with col2:
-                # 2) 그래프 제목에 단위 정보 추가
                 st.subheader("채권 연령 현황")
 
                 # 통화 선택 라디오 버튼 (가로 정렬 및 순서 지정)
@@ -127,8 +126,6 @@ if uploaded_file:
                     y_axis_title_unit = "(원)"
                     title = "원화 채권 연령 현황"
                 elif currency_option == '외화':
-                    # 외화는 USD로 가정
-                    # '환종' 컬럼값이 'USD'인 값만 집계하도록 수정
                     plot_df = df[df['환종'] == 'USD'].groupby('연령구분')['채권금액(외화)'].sum().reset_index()
                     amount_col = '채권금액(외화)'
                     y_axis_title_unit = "($)"
@@ -144,36 +141,29 @@ if uploaded_file:
                 plot_df['연령구분'] = pd.Categorical(plot_df['연령구분'], categories=age_order, ordered=True)
                 plot_df = plot_df.sort_values('연령구분')
                 
-                # --- 수정 부분 시작: 금액을 백만원/백만달러 단위로 변환하는 코드를 삭제합니다. ---
-                # plot_df[amount_col] = plot_df[amount_col] / 1_000_000
-                # --- 수정 부분 끝 ---
-
                 # --- Plotly Express를 사용하여 그래프 생성 ---
                 fig = px.bar(
                     plot_df,
                     x='연령구분',
                     y=amount_col,
-                    # 텍스트 레이블을 원래 금액 그대로 포맷팅
                     text=plot_df[amount_col].apply(lambda x: f'{x:,.0f}'),
                     title=title,
                     labels={
                         '연령구분': '채권 연령',
-                        amount_col: f"채권 금액 {y_axis_title_unit}" # y축 제목에 단위 추가
+                        amount_col: f"채권 금액 {y_axis_title_unit}"
                     },
                     color_discrete_sequence=px.colors.qualitative.Vivid
                 )
                 
-                # y-axis를 수정하여 원래 금액을 보여주도록 합니다.
                 fig.update_layout(
-                    yaxis_tickformat=',.0f', # 쉼표로 천 단위 구분
+                    yaxis_tickformat=',.0f',
                     yaxis_title=f"채권 금액 {y_axis_title_unit}",
                     uniformtext_minsize=8, uniformtext_mode='hide'
                 )
                 
-                fig.update_traces(textposition='outside') # 막대 위에 텍스트 표시
+                fig.update_traces(textposition='outside')
                 fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
                 
-                # plotly_events를 사용하여 그래프 표시 및 클릭 이벤트 처리
                 selected_point = plotly_events(fig, click_event=True, key="bar_chart")
 
                 # --- 새로운 기능: 클릭 시 상세 데이터 표 생성 (col2 내부에 배치) ---
@@ -195,7 +185,6 @@ if uploaded_file:
 
 
                     # 거래처별 합계 계산 및 내림차순 정렬
-                    # amount_col에 따라 집계 컬럼 변경
                     summary_df = detail_df.groupby('거래처명')[amount_col].sum().reset_index()
                     summary_df = summary_df.sort_values(by=amount_col, ascending=False)
 
@@ -212,8 +201,7 @@ if uploaded_file:
                     final_df[amount_col] = final_df[amount_col].apply(lambda x: f'{x:,.0f}')
 
                     # 결과 표 표시
-                    # 인덱스(index)를 표시하지 않도록 옵션 추가
-                    st.dataframe(final_df.rename(columns={amount_col: '채권금액'}), use_container_width=True, hide_index=True) # 컬럼명 일관성 유지
+                    st.dataframe(final_df.rename(columns={amount_col: '채권금액'}), use_container_width=True, hide_index=True)
 
             # 칼럼 3: 6개월 이상 미회수 채권 Top 5 표시
             with col3:
@@ -241,10 +229,6 @@ if uploaded_file:
                 top5_df = overdue_df.groupby('거래처명')['채권금액(원화)'].sum().reset_index()
                 top5_df = top5_df.sort_values(by='채권금액(원화)', ascending=False).head(5)
 
-                # --- 수정 부분 시작: 금액을 백만원 단위로 변환하는 코드를 삭제합니다. ---
-                # top5_df['채권금액(원화)'] = top5_df['채권금액(원화)'] / 1_000_000
-                # --- 수정 부분 끝 ---
-                
                 # y축 정렬을 위해 거래처명을 카테고리형으로 변환
                 # `top5_df['거래처명']`는 이미 정렬되어 있으므로 오름차순으로 설정하여 정렬 순서 유지
                 top5_df['거래처명'] = pd.Categorical(top5_df['거래처명'], categories=top5_df['거래처명'].unique(), ordered=True)
@@ -294,7 +278,6 @@ if uploaded_file:
                         customer_detail_df['채권금액(원화)'] = customer_detail_df['채권금액(원화)'].apply(lambda x: f'{x:,.0f}')
 
                         # 결과 표 표시
-                        # 인덱스(index)를 표시하지 않도록 옵션 추가
                         st.dataframe(customer_detail_df[['매출일자', '채권금액(원화)', '적요']], use_container_width=True, hide_index=True)
 
                 else:
