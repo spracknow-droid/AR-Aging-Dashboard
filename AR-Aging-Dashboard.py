@@ -228,16 +228,28 @@ if uploaded_file:
                         # 클릭된 막대의 거래처명 가져오기
                         clicked_customer = selected_customer[0]['y']
                         st.subheader(f"'{clicked_customer}' 상세 내역")
-
+    
                         # 클릭된 거래처에 해당하는 원본 데이터 필터링
                         customer_detail_df = overdue_df[overdue_df['거래처명'] == clicked_customer].copy()
-
+                        
+                        # 소계 계산
+                        total_krw = customer_detail_df['채권금액(원화)'].sum()
+                        total_foreign = customer_detail_df['채권금액(외화)'].sum()
+    
+                        # 소계 행 생성
+                        subtotal_row = pd.DataFrame([['**소계**', total_krw, total_foreign, '']], 
+                                                    columns=['매출일자', '채권금액(원화)', '채권금액(외화)', '적요'])
+    
+                        # 상세 데이터프레임에 소계 행 추가
+                        customer_detail_df = pd.concat([customer_detail_df, subtotal_row], ignore_index=True)
+    
                         # 필요한 컬럼만 선택하여 포맷팅
-                        customer_detail_df['매출일자'] = customer_detail_df['매출일자'].dt.strftime('%Y-%m-%d')
+                        customer_detail_df['매출일자'] = customer_detail_df['매출일자'].astype(str).str.split().str[0]
                         customer_detail_df['채권금액(원화)'] = customer_detail_df['채권금액(원화)'].apply(lambda x: f'{x:,.0f}')
-
+                        customer_detail_df['채권금액(외화)'] = customer_detail_df['채권금액(외화)'].apply(lambda x: f'{x:,.2f}')
+    
                         # 결과 표 표시
-                        st.dataframe(customer_detail_df[['매출일자', '채권금액(원화)', '적요']], use_container_width=True, hide_index=True)
+                        st.dataframe(customer_detail_df[['매출일자', '채권금액(원화)', '채권금액(외화)', '적요']], use_container_width=True, hide_index=True)
 
                 else:
                     st.info("6개월 이상 미회수된 채권이 없습니다.")
