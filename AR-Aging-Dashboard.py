@@ -120,22 +120,26 @@ if uploaded_file:
                 plot_df['연령구분'] = pd.Categorical(plot_df['연령구분'], categories=age_order, ordered=True)
                 plot_df = plot_df.sort_values('연령구분')
                 
-                # Plotly Graph Objects를 사용하여 그래프 생성
-                fig = go.Figure()
-                fig.add_trace(go.Bar(
-                    x=plot_df['연령구분'],
-                    y=plot_df[amount_col],
-                    text=plot_df[amount_col].apply(lambda x: f'{x:,.0f}'),
-                    textposition='outside',
-                    marker_color=px.colors.qualitative.Vivid[0]
-                ))
-
-                fig.update_layout(
+                # Plotly Express를 사용하여 세로 막대 그래프 생성
+                fig = px.bar(
+                    plot_df,
+                    x='연령구분',  # X축: 채권 연령
+                    y=amount_col,  # Y축: 채권 금액
                     title=title,
-                    xaxis_title='채권 연령',
-                    yaxis_title=f"채권 금액 {y_axis_title_unit}",
-                    yaxis_tickformat=',.0f',
-                    uniformtext_minsize=8, uniformtext_mode='hide'
+                    labels={'연령구분': '채권 연령', amount_col: f"채권 금액 {y_axis_title_unit}"},
+                    color_discrete_sequence=px.colors.qualitative.Vivid
+                )
+                
+                # 막대 위에 값 표시
+                fig.update_traces(
+                    texttemplate='%{y:,.0f}',  # Y축 값 표시
+                    textposition='outside',
+                    cliponaxis=False
+                )
+                
+                fig.update_layout(
+                    uniformtext_minsize=8, 
+                    uniformtext_mode='hide'
                 )
 
                 selected_point = plotly_events(fig, click_event=True, key="bar_chart")
@@ -169,7 +173,6 @@ if uploaded_file:
                     # 결과 표 표시
                     st.dataframe(final_df.rename(columns={amount_col: '채권금액'}), use_container_width=True, hide_index=True)
 
-
             # 칼럼 3: 6개월 이상 미회수 채권 Top 5 표시
             with col3:
                 st.subheader("6개월 이상 미회수 채권 (Top 5)")
@@ -179,7 +182,7 @@ if uploaded_file:
 
                 # 거래처명 약식 표기를 위한 딕셔너리
                 name_mapping = {
-                    'Jiangsu Shekoy Semiconductor New Material Co., Ltd': 'Jiangsu Shekoy',
+                    'Jiangsu Shekoy Semiconductor New Material Co., Ltd': 'Shekoy',
                     'UP Electronic Materials(Taiwan) Limited': 'UPTW',
                     'Changxin Memory Technologies, Inc. (CXMT)': 'CXMT',
                     'CHJS(Chengdu High tech Jin Science)': 'CHJS',
